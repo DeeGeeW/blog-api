@@ -27,8 +27,36 @@ RSpec.describe "Posts", type: :request do
 
       expect(response).to have_http_status(200)
       expect(post["user_id"]).to eq(user.id)
-      # expect(post["title"]).to eq(Faker::Company.catch_phrase)
+      expect(post["title"]).to eq(post["title"])
       expect(post["image"]).to eq("https://i.picsum.photos/id/852/200/300.jpg?hmac=6IMZOkPF_q5nf8IwfYdfxPUyKnyPL1w8moDjTeMOT5g")
+    end
+  end
+  describe "POST /posts" do
+    it "creates new post" do
+      
+      user = User.create!(name: "Test", email: "test@test.com", password: "password")
+      
+      jwt = JWT.encode(
+        {
+          user_id: user.id, # the data to encode
+          exp: 24.hours.from_now.to_i, 
+        },
+        Rails.application.credentials.fetch(:secret_key_base), # the secret key
+        "HS256" 
+      )
+
+      post "/posts", params: {
+        user_id: user.id,
+        title: "title test",
+        body: "body test",
+        image: "image string test"
+      },
+      headers: {"Authorization" => "Bearer #{jwt}"}
+
+      post = JSON.parse(response.body)
+
+      expect(response).to have_http_status(200)
+      expect(post["title"]).to eq("title test")
     end
   end
 end
